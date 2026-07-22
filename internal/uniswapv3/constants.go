@@ -7,6 +7,14 @@ const (
 	MinTick int32 = -887272
 	MaxTick int32 = 887272
 
+	// FeeDenominatorPips is the denominator used by Uniswap v3 fee tiers.
+	//
+	// Examples:
+	//   - 100  = 0.01%
+	//   - 500  = 0.05%
+	//   - 3000 = 0.30%
+	FeeDenominatorPips uint32 = 1_000_000
+
 	fixedPoint96Resolution  uint = 96
 	fixedPoint128Resolution uint = 128
 )
@@ -15,6 +23,7 @@ var (
 	q96  = powerOfTwo(fixedPoint96Resolution)
 	q128 = powerOfTwo(fixedPoint128Resolution)
 
+	maxUint128 = maxUnsignedInteger(128)
 	maxUint160 = maxUnsignedInteger(160)
 	maxUint256 = maxUnsignedInteger(256)
 
@@ -45,7 +54,7 @@ func MinSqrtRatio() *big.Int {
 	return cloneInt(minSqrtRatio)
 }
 
-// MaxSqrtRatio returns the upper sqrt-price boundary used by Uniswap v3.
+// MaxSqrtRatio returns the exclusive upper sqrt-price boundary.
 //
 // Valid pool sqrt prices are strictly smaller than this value.
 func MaxSqrtRatio() *big.Int {
