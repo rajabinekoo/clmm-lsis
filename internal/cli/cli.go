@@ -27,6 +27,7 @@ func Run(
 	switch args[0] {
 	case "help", "-h", "--help":
 		writeUsage(stdout)
+
 		return exitSuccess
 
 	case "version":
@@ -46,6 +47,14 @@ func Run(
 
 	case "db-check":
 		return runDBCheck(
+			ctx,
+			args[1:],
+			stdout,
+			stderr,
+		)
+
+	case "db-migrate-swaps":
+		return runDBMigrateSwaps(
 			ctx,
 			args[1:],
 			stdout,
@@ -88,21 +97,26 @@ func writeUsage(
 
 	fmt.Fprintln(
 		writer,
-		"  version       Print build version information",
+		"  version           Print build version information",
 	)
 
 	fmt.Fprintln(
 		writer,
-		"  config-check  Validate a study configuration",
+		"  config-check      Validate a study configuration",
 	)
 
 	fmt.Fprintln(
 		writer,
-		"  db-check      Validate the imported legacy database",
+		"  db-check          Validate the imported legacy database",
 	)
 
 	fmt.Fprintln(
 		writer,
-		"  help          Print this help message",
+		"  db-migrate-swaps  Create additive swap-indexing tables",
+	)
+
+	fmt.Fprintln(
+		writer,
+		"  help              Print this help message",
 	)
 }

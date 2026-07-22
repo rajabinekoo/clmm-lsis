@@ -15,7 +15,8 @@ type SchemaReport struct {
 	PoolSnapshotsTable      bool
 	IndexerCheckpointsTable bool
 
-	PoolSwapsTable bool
+	PoolSwapsTable       bool
+	SwapIndexRangesTable bool
 }
 
 func (r SchemaReport) LegacyReady() bool {
@@ -25,15 +26,26 @@ func (r SchemaReport) LegacyReady() bool {
 		r.IndexerCheckpointsTable
 }
 
+func (r SchemaReport) AdditiveReady() bool {
+	return r.PoolSwapsTable &&
+		r.SwapIndexRangesTable
+}
+
 func (r SchemaReport) MissingLegacyTables() []string {
 	missing := make([]string, 0, 4)
 
 	if !r.PoolsTable {
-		missing = append(missing, "pools")
+		missing = append(
+			missing,
+			"pools",
+		)
 	}
 
 	if !r.LPActionsTable {
-		missing = append(missing, "lp_actions")
+		missing = append(
+			missing,
+			"lp_actions",
+		)
 	}
 
 	if !r.PoolSnapshotsTable {
@@ -47,6 +59,28 @@ func (r SchemaReport) MissingLegacyTables() []string {
 		missing = append(
 			missing,
 			"indexer_checkpoints",
+		)
+	}
+
+	sort.Strings(missing)
+
+	return missing
+}
+
+func (r SchemaReport) MissingAdditiveTables() []string {
+	missing := make([]string, 0, 2)
+
+	if !r.PoolSwapsTable {
+		missing = append(
+			missing,
+			"pool_swaps",
+		)
+	}
+
+	if !r.SwapIndexRangesTable {
+		missing = append(
+			missing,
+			"pool_swap_index_ranges",
 		)
 	}
 
@@ -74,10 +108,11 @@ func (r *Repository) InspectSchema(
 		return SchemaReport{}, err
 	}
 
-	poolSnapshots, err := r.tableExists(
-		ctx,
-		"pool_snapshots",
-	)
+	poolSnapshots, err :=
+		r.tableExists(
+			ctx,
+			"pool_snapshots",
+		)
 	if err != nil {
 		return SchemaReport{}, err
 	}
@@ -99,12 +134,27 @@ func (r *Repository) InspectSchema(
 		return SchemaReport{}, err
 	}
 
+	swapIndexRanges, err :=
+		r.tableExists(
+			ctx,
+			"pool_swap_index_ranges",
+		)
+	if err != nil {
+		return SchemaReport{}, err
+	}
+
 	return SchemaReport{
-		PoolsTable:              pools,
-		LPActionsTable:          lpActions,
-		PoolSnapshotsTable:      poolSnapshots,
+		PoolsTable: pools,
+
+		LPActionsTable: lpActions,
+
+		PoolSnapshotsTable: poolSnapshots,
+
 		IndexerCheckpointsTable: indexerCheckpoints,
-		PoolSwapsTable:          poolSwaps,
+
+		PoolSwapsTable: poolSwaps,
+
+		SwapIndexRangesTable: swapIndexRanges,
 	}, nil
 }
 
@@ -121,9 +171,28 @@ func (r *Repository) RequireLegacySchema(
 	}
 
 	return fmt.Errorf(
-		"%w: missing tables: %v",
+		"%w: missing legacy tables: %v",
 		storage.ErrSchemaIncompatible,
 		report.MissingLegacyTables(),
+	)
+}
+
+func (r *Repository) RequireSwapSchema(
+	ctx context.Context,
+) error {
+	report, err := r.InspectSchema(ctx)
+	if err != nil {
+		return err
+	}
+
+	if report.AdditiveReady() {
+		return nil
+	}
+
+	return fmt.Errorf(
+		"%w: missing additive tables: %v",
+		storage.ErrSchemaIncompatible,
+		report.MissingAdditiveTables(),
 	)
 }
 
@@ -131,7 +200,8 @@ func (r *Repository) tableExists(
 	ctx context.Context,
 	tableName string,
 ) (bool, error) {
-	relationName := r.schema + "." + tableName
+	relationName :=
+		r.schema + "." + tableName
 
 	var exists bool
 

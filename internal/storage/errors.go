@@ -34,4 +34,16 @@ var (
 	ErrSwapTableUnavailable = errors.New(
 		"pool swaps table is unavailable",
 	)
+
+	ErrSwapIndexRangeNotFound = errors.New(
+		"swap index range not found",
+	)
+
+	ErrSwapIndexProgressConflict = errors.New(
+		"swap index progress conflict",
+	)
+
+	ErrStoredSwapConflict = errors.New(
+		"stored swap conflicts with existing event",
+	)
 )

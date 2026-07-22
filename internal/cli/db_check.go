@@ -136,15 +136,17 @@ func runDBCheck(
 		statusWord(schema.IndexerCheckpointsTable),
 	)
 
-	if schema.PoolSwapsTable {
+	fmt.Fprintf(
+		stdout,
+		"additive schema: pool_swaps=%s pool_swap_index_ranges=%s\n",
+		statusWord(schema.PoolSwapsTable),
+		statusWord(schema.SwapIndexRangesTable),
+	)
+
+	if !schema.AdditiveReady() {
 		fmt.Fprintln(
 			stdout,
-			"additive schema: pool_swaps=present",
-		)
-	} else {
-		fmt.Fprintln(
-			stdout,
-			"additive schema: pool_swaps=missing (expected before swap migration)",
+			"additive schema is incomplete (expected before db-migrate-swaps)",
 		)
 	}
 

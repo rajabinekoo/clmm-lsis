@@ -29,6 +29,7 @@ help:
 	@echo "  make postgres-down Stop PostgreSQL"
 	@echo "  make clean         Remove build artifacts"
 	@echo "  make db-check      Validate the imported legacy database"
+	@echo "  make db-migrate-swaps  Create additive swap-indexing tables"
 
 .PHONY: fmt
 fmt:
@@ -85,3 +86,10 @@ db-check:
 	if [ -f .env ]; then . ./.env; fi; \
 	set +a; \
 	$(GO) run ./cmd/clmm-lsis db-check --config $(CONFIG)
+	
+.PHONY: db-migrate-swaps
+db-migrate-swaps:
+	@set -a; \
+	if [ -f .env ]; then . ./.env; fi; \
+	set +a; \
+	$(GO) run ./cmd/clmm-lsis db-migrate-swaps --config $(CONFIG)
