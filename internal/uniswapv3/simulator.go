@@ -409,10 +409,25 @@ func (s Simulator) validateSnapshot(
 		)
 	}
 
-	// At an exact initialized-tick boundary, a right-to-left crossing stores
-	// tickNext-1 even though TickMath maps the boundary price to tickNext.
-	if snapshot.CurrentTick() != derivedTick &&
-		snapshot.CurrentTick() != derivedTick-1 {
+	tickIsConsistent :=
+		snapshot.CurrentTick() == derivedTick
+
+	if !tickIsConsistent &&
+		snapshot.CurrentTick() == derivedTick-1 {
+		boundaryPrice, err :=
+			GetSqrtRatioAtTick(derivedTick)
+		if err != nil {
+			return fmt.Errorf(
+				"compute derived tick boundary price: %w",
+				err,
+			)
+		}
+
+		tickIsConsistent =
+			boundaryPrice.Cmp(currentSqrtPrice) == 0
+	}
+
+	if !tickIsConsistent {
 		return fmt.Errorf(
 			"snapshot tick %d is inconsistent with sqrt-price-derived tick %d",
 			snapshot.CurrentTick(),
