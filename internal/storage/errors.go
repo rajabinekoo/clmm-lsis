@@ -46,4 +46,12 @@ var (
 	ErrStoredSwapConflict = errors.New(
 		"stored swap conflicts with existing event",
 	)
+
+	ErrInvalidSwapBatch = errors.New(
+		"invalid swap batch",
+	)
+
+	ErrChainReorganization = errors.New(
+		"chain reorganization detected",
+	)
 )
