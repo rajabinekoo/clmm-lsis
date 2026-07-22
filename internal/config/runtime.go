@@ -14,8 +14,39 @@ type RuntimeSecrets struct {
 	DatabaseURL    string
 }
 
-func LoadRuntimeSecrets(cfg Config) (RuntimeSecrets, error) {
-	rpcURL, err := requiredEnvironmentURL(
+// LoadRuntimeSecrets resolves every secret required by the complete research
+// pipeline.
+//
+// Commands that require only one dependency should use LoadDatabaseURL or
+// LoadEthereumRPCURL instead. This prevents a database-only command from
+// unnecessarily requiring an RPC credential.
+func LoadRuntimeSecrets(
+	cfg Config,
+) (RuntimeSecrets, error) {
+	ethereumRPCURL, err :=
+		LoadEthereumRPCURL(cfg)
+	if err != nil {
+		return RuntimeSecrets{}, err
+	}
+
+	databaseURL, err :=
+		LoadDatabaseURL(cfg)
+	if err != nil {
+		return RuntimeSecrets{}, err
+	}
+
+	return RuntimeSecrets{
+		EthereumRPCURL: ethereumRPCURL,
+		DatabaseURL:    databaseURL,
+	}, nil
+}
+
+// LoadEthereumRPCURL resolves and validates the configured RPC environment
+// variable without reading any database secret.
+func LoadEthereumRPCURL(
+	cfg Config,
+) (string, error) {
+	value, err := requiredEnvironmentURL(
 		cfg.Environment.EthereumRPCURLEnv,
 		map[string]struct{}{
 			"http":  {},
@@ -25,10 +56,21 @@ func LoadRuntimeSecrets(cfg Config) (RuntimeSecrets, error) {
 		},
 	)
 	if err != nil {
-		return RuntimeSecrets{}, fmt.Errorf("ethereum RPC URL: %w", err)
+		return "", fmt.Errorf(
+			"ethereum RPC URL: %w",
+			err,
+		)
 	}
 
-	databaseURL, err := requiredEnvironmentURL(
+	return value, nil
+}
+
+// LoadDatabaseURL resolves and validates the configured PostgreSQL environment
+// variable without requiring an Ethereum RPC credential.
+func LoadDatabaseURL(
+	cfg Config,
+) (string, error) {
+	value, err := requiredEnvironmentURL(
 		cfg.Environment.DatabaseURLEnv,
 		map[string]struct{}{
 			"postgres":   {},
@@ -36,20 +78,22 @@ func LoadRuntimeSecrets(cfg Config) (RuntimeSecrets, error) {
 		},
 	)
 	if err != nil {
-		return RuntimeSecrets{}, fmt.Errorf("database URL: %w", err)
+		return "", fmt.Errorf(
+			"database URL: %w",
+			err,
+		)
 	}
 
-	return RuntimeSecrets{
-		EthereumRPCURL: rpcURL,
-		DatabaseURL:    databaseURL,
-	}, nil
+	return value, nil
 }
 
 func requiredEnvironmentURL(
 	environmentVariable string,
 	allowedSchemes map[string]struct{},
 ) (string, error) {
-	value := strings.TrimSpace(os.Getenv(environmentVariable))
+	value := strings.TrimSpace(
+		os.Getenv(environmentVariable),
+	)
 
 	if value == "" {
 		return "", fmt.Errorf(

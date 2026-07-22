@@ -13,9 +13,9 @@ type PoolEventPayload interface {
 
 // PoolEvent contains one ordered, canonical on-chain pool event.
 //
-// The event cursor determines the exact order of logs. Block number alone is
-// insufficient because several swaps and liquidity actions may occur in the
-// same transaction or block.
+// BlockHash may be unknown for imported legacy events because the original
+// liquidity-action table did not persist it. Newly indexed events must always
+// include the block hash so reorg consistency can be verified.
 type PoolEvent struct {
 	poolAddress     Address
 	cursor          EventCursor
@@ -48,27 +48,36 @@ func NewPoolEvent(
 
 func (e PoolEvent) Validate() error {
 	if e.poolAddress.IsZero() {
-		return fmt.Errorf("pool event pool address is required")
+		return fmt.Errorf(
+			"pool event pool address is required",
+		)
 	}
 
 	if err := e.cursor.Validate(); err != nil {
-		return fmt.Errorf("pool event cursor: %w", err)
+		return fmt.Errorf(
+			"pool event cursor: %w",
+			err,
+		)
 	}
 
-	if e.blockHash.IsZero() {
-		return fmt.Errorf("pool event block hash is required")
-	}
-
+	// Block hash is optional only for imported legacy events.
 	if e.transactionHash.IsZero() {
-		return fmt.Errorf("pool event transaction hash is required")
+		return fmt.Errorf(
+			"pool event transaction hash is required",
+		)
 	}
 
 	if e.payload == nil {
-		return fmt.Errorf("pool event payload is required")
+		return fmt.Errorf(
+			"pool event payload is required",
+		)
 	}
 
 	if err := e.payload.Type().Validate(); err != nil {
-		return fmt.Errorf("pool event payload type: %w", err)
+		return fmt.Errorf(
+			"pool event payload type: %w",
+			err,
+		)
 	}
 
 	if err := e.payload.Validate(); err != nil {
@@ -92,6 +101,10 @@ func (e PoolEvent) Cursor() EventCursor {
 
 func (e PoolEvent) BlockHash() Hash {
 	return e.blockHash
+}
+
+func (e PoolEvent) BlockHashKnown() bool {
+	return !e.blockHash.IsZero()
 }
 
 func (e PoolEvent) TransactionHash() Hash {

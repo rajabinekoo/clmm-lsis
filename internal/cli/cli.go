@@ -30,27 +30,79 @@ func Run(
 		return exitSuccess
 
 	case "version":
-		return runVersion(args[1:], stdout, stderr)
+		return runVersion(
+			args[1:],
+			stdout,
+			stderr,
+		)
 
 	case "config-check":
-		return runConfigCheck(ctx, args[1:], stdout, stderr)
+		return runConfigCheck(
+			ctx,
+			args[1:],
+			stdout,
+			stderr,
+		)
+
+	case "db-check":
+		return runDBCheck(
+			ctx,
+			args[1:],
+			stdout,
+			stderr,
+		)
 
 	default:
-		fmt.Fprintf(stderr, "unknown command %q\n\n", args[0])
+		fmt.Fprintf(
+			stderr,
+			"unknown command %q\n\n",
+			args[0],
+		)
+
 		writeUsage(stderr)
 
 		return exitUsage
 	}
 }
 
-func writeUsage(writer io.Writer) {
-	fmt.Fprintln(writer, "CLMM-LSIS research CLI")
+func writeUsage(
+	writer io.Writer,
+) {
+	fmt.Fprintln(
+		writer,
+		"CLMM-LSIS research CLI",
+	)
+
 	fmt.Fprintln(writer)
+
 	fmt.Fprintln(writer, "Usage:")
-	fmt.Fprintln(writer, "  clmm-lsis <command> [options]")
+
+	fmt.Fprintln(
+		writer,
+		"  clmm-lsis <command> [options]",
+	)
+
 	fmt.Fprintln(writer)
+
 	fmt.Fprintln(writer, "Commands:")
-	fmt.Fprintln(writer, "  version       Print build version information")
-	fmt.Fprintln(writer, "  config-check  Validate a study configuration")
-	fmt.Fprintln(writer, "  help          Print this help message")
+
+	fmt.Fprintln(
+		writer,
+		"  version       Print build version information",
+	)
+
+	fmt.Fprintln(
+		writer,
+		"  config-check  Validate a study configuration",
+	)
+
+	fmt.Fprintln(
+		writer,
+		"  db-check      Validate the imported legacy database",
+	)
+
+	fmt.Fprintln(
+		writer,
+		"  help          Print this help message",
+	)
 }

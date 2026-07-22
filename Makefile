@@ -28,6 +28,7 @@ help:
 	@echo "  make postgres-up   Start PostgreSQL"
 	@echo "  make postgres-down Stop PostgreSQL"
 	@echo "  make clean         Remove build artifacts"
+	@echo "  make db-check      Validate the imported legacy database"
 
 .PHONY: fmt
 fmt:
@@ -77,3 +78,10 @@ postgres-down:
 .PHONY: clean
 clean:
 	@rm -rf $(BIN_DIR)
+	
+.PHONY: db-check
+db-check:
+	@set -a; \
+	if [ -f .env ]; then . ./.env; fi; \
+	set +a; \
+	$(GO) run ./cmd/clmm-lsis db-check --config $(CONFIG)

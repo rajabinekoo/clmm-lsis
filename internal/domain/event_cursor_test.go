@@ -6,7 +6,9 @@ import (
 	"github.com/rajabinekoo/clmm-lsis/internal/domain"
 )
 
-func TestEventCursorCompare(t *testing.T) {
+func TestEventCursorCompareUsesBlockAndLogOrder(
+	t *testing.T,
+) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -19,31 +21,19 @@ func TestEventCursorCompare(t *testing.T) {
 			name: "earlier block",
 			left: domain.EventCursor{
 				BlockNumber: 100,
+				LogIndex:    50,
 			},
 			right: domain.EventCursor{
 				BlockNumber: 101,
+				LogIndex:    1,
 			},
 			expected: -1,
 		},
 		{
-			name: "earlier transaction",
+			name: "earlier block log",
 			left: domain.EventCursor{
 				BlockNumber:      100,
-				TransactionIndex: 2,
-				LogIndex:         20,
-			},
-			right: domain.EventCursor{
-				BlockNumber:      100,
-				TransactionIndex: 3,
-				LogIndex:         1,
-			},
-			expected: -1,
-		},
-		{
-			name: "earlier log",
-			left: domain.EventCursor{
-				BlockNumber:      100,
-				TransactionIndex: 2,
+				TransactionIndex: 10,
 				LogIndex:         20,
 			},
 			right: domain.EventCursor{
@@ -54,7 +44,7 @@ func TestEventCursorCompare(t *testing.T) {
 			expected: -1,
 		},
 		{
-			name: "equal",
+			name: "same Ethereum log",
 			left: domain.EventCursor{
 				BlockNumber:      100,
 				TransactionIndex: 2,
@@ -62,21 +52,21 @@ func TestEventCursorCompare(t *testing.T) {
 			},
 			right: domain.EventCursor{
 				BlockNumber:      100,
-				TransactionIndex: 2,
+				TransactionIndex: 0,
 				LogIndex:         20,
 			},
 			expected: 0,
 		},
 		{
-			name: "later log",
+			name: "later block log",
 			left: domain.EventCursor{
 				BlockNumber:      100,
-				TransactionIndex: 2,
+				TransactionIndex: 1,
 				LogIndex:         22,
 			},
 			right: domain.EventCursor{
 				BlockNumber:      100,
-				TransactionIndex: 2,
+				TransactionIndex: 8,
 				LogIndex:         21,
 			},
 			expected: 1,
@@ -89,7 +79,9 @@ func TestEventCursorCompare(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := testCase.left.Compare(testCase.right)
+			actual := testCase.left.Compare(
+				testCase.right,
+			)
 
 			if actual != testCase.expected {
 				t.Fatalf(
@@ -99,5 +91,29 @@ func TestEventCursorCompare(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestEventCursorSameLogIgnoresTransactionIndex(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	left := domain.EventCursor{
+		BlockNumber:      100,
+		TransactionIndex: 4,
+		LogIndex:         25,
+	}
+
+	right := domain.EventCursor{
+		BlockNumber:      100,
+		TransactionIndex: 0,
+		LogIndex:         25,
+	}
+
+	if !left.SameLog(right) {
+		t.Fatal(
+			"SameLog() = false, want true",
+		)
 	}
 }
